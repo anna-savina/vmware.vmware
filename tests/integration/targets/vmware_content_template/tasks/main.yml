@@ -1,5 +1,10 @@
 ---
 - block:
+    - name: Import common vars
+      ansible.builtin.include_vars:
+        file: ../group_vars.yml
+      when: not run_on_simulator
+
     - name: "Test setup: Create VM guest {{ vm }}"
       community.vmware.vmware_guest:
         validate_certs: false
@@ -53,6 +58,36 @@
         that:
           - __res.changed == True
           - __res.template_info.msg == "Template '" + template_name + "'."
+      when: not run_on_simulator
+
+    - name: Delete template from content library
+      vmware.vmware.content_template:
+        validate_certs: false
+        hostname: "{{ vcenter_hostname }}"
+        username: "{{ vcenter_username }}"
+        password: "{{ vcenter_password }}"
+        port: "{{ vcenter_port }}"
+        template: "{{ template_name }}"
+        library: "{{ library }}"
+        host: "{{ template_host }}"
+        state: absent
+      when: not run_on_simulator
+
+    - name: Check for deleted template
+      vmware.vmware.content_library_item_info:
+        validate_certs: false
+        hostname: "{{ vcenter_hostname }}"
+        username: "{{ vcenter_username }}"
+        password: "{{ vcenter_password }}"
+        port: "{{ vcenter_port }}"
+        library_name: "{{ library }}"
+        library_item_name: "{{ template_name }}"
+      register: __res
+      when: not run_on_simulator
+
+    - name: Verify Template Was Deleted
+      ansible.builtin.assert:
+        that: (__res.library_item_info | length) == 0
       when: not run_on_simulator
 
   always:

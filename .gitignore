@@ -1,5 +1,6 @@
 /tests/output/
 /changelogs/.plugin-cache.yaml
+.ansible/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
@@ -56,6 +57,7 @@ coverage.xml
 
 # Integration tests
 tests/integration/integration_config.yml
+tests/integration/inventory
 
 # Translations
 *.mo

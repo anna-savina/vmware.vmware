@@ -44,7 +44,7 @@ options:
   dns_append:
     description:
       - If V(true) items from O(dns_domains) and O(dns_servers) will be added to already configured DNS domains/servers.
-      - If V(false) domains/servers will be overriden.
+      - If V(false) domains/servers will be overridden.
     type: bool
     default: true
   dns_hostname:
@@ -174,7 +174,8 @@ attributes:
     description: The check_mode support.
     support: full
 extends_documentation_fragment:
-  - vmware.vmware.vmware_rest_client.documentation
+    - vmware.vmware.base_options
+    - vmware.vmware.additional_rest_options
 '''
 
 EXAMPLES = r'''
@@ -238,13 +239,25 @@ vcsa_settings:
     "ssh_enabled": true,
     "timesync_mode": "ntp"
   }
+vcsa:
+  description:
+    - Identifying information about the appliance
+  returned: On success
+  type: dict
+  sample: {
+    "vcsa": {
+      "hostname": "my-appliance",
+      "port": 443
+    },
+  }
 '''
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.vmware.vmware.plugins.module_utils.vmware_rest_client import VmwareRestClient
+from ansible_collections.vmware.vmware.plugins.module_utils._module_rest_base import ModuleRestBase
+from ansible_collections.vmware.vmware.plugins.module_utils.argument_spec import rest_compatible_argument_spec
 
 
-class VmwareVcsaSettings(VmwareRestClient):
+class VmwareVcsaSettings(ModuleRestBase):
     def __init__(self, module):
         super(VmwareVcsaSettings, self).__init__(module)
         self.api_system = self.api_client.appliance.system
@@ -525,7 +538,7 @@ class VmwareVcsaSettings(VmwareRestClient):
 
 
 def main():
-    argument_spec = VmwareRestClient.vmware_client_argument_spec()
+    argument_spec = rest_compatible_argument_spec()
     argument_spec.update(
         dict(
             ssh_enabled=dict(type='bool'),
@@ -571,7 +584,14 @@ def main():
 
     vmware_system = VmwareVcsaSettings(module)
     vmware_system.vcsa_settings()
-    module.exit_json(changed=vmware_system.changed, vcsa_settings=vmware_system.info)
+    module.exit_json(
+        changed=vmware_system.changed,
+        vcsa_settings=vmware_system.info,
+        vcsa={
+            'hostname': module.params['hostname'],
+            'port': module.params['port']
+        }
+    )
 
 
 if __name__ == '__main__':
